@@ -35,7 +35,7 @@ var (
 	vsb         registry.Key
 	cache       = &SensorCache{}
 	sensorGauge = newSensorGauge()
-	serverPort  = getEnvOrDefault("HWINFOSERVER_PORT", ":8080")
+	serverPort  = getEnvOrDefault("HWINFOSERVER_PORT", ":56765")
 )
 
 func init() {
