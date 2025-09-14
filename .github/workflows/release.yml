@@ -19,8 +19,6 @@ jobs:
 
       - name: Build
         run: |
-          set GOOS=windows
-          set GOARCH=amd64
           go build -o hwinfo-metrics-server.exe main.go
 
       - name: Release
