@@ -32,7 +32,6 @@ type SensorCache struct {
 }
 
 var (
-	vsb         registry.Key
 	cache       = &SensorCache{}
 	sensorGauge = newSensorGauge()
 	serverPort  = getEnvOrDefault("HWINFOSERVER_PORT", ":56765")
@@ -43,12 +42,6 @@ func init() {
 }
 
 func main() {
-	var err error
-	if vsb, err = registry.OpenKey(registry.CURRENT_USER, `Software\HWiNFO64\VSB`, registry.QUERY_VALUE); err != nil {
-		log.Fatal(err)
-	}
-	defer vsb.Close()
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -70,6 +63,9 @@ func newSensorGauge() *prometheus.GaugeVec {
 
 func updateSensorsLoop(ctx context.Context) {
 	prevKeys := make(map[string]struct{})
+	minSleepTime := 500 * time.Millisecond
+	sleepTime := minSleepTime
+	maxSleepTime := 5 * time.Second
 	for {
 		select {
 		case <-ctx.Done():
@@ -105,7 +101,18 @@ func updateSensorsLoop(ctx context.Context) {
 			}
 
 			prevKeys = currKeys
-			time.Sleep(500 * time.Millisecond)
+
+			// Exponential backoff if no sensors, else reset backoff
+			if len(sensors) == 0 {
+				time.Sleep(sleepTime)
+				sleepTime *= 2
+				if sleepTime > maxSleepTime {
+					sleepTime = maxSleepTime
+				}
+			} else {
+				sleepTime = minSleepTime
+				time.Sleep(sleepTime)
+			}
 		}
 	}
 }
@@ -148,9 +155,20 @@ func handleGracefulShutdown(srv *http.Server, cancel context.CancelFunc) {
 }
 
 func readSensors() []Sensor {
+	k, err := registry.OpenKey(registry.CURRENT_USER, `Software\HWiNFO64\VSB`, registry.QUERY_VALUE)
+	if err != nil {
+		if errors.Is(err, registry.ErrNotExist) {
+			log.Printf("HWiNFO registry key not found, will retry with backoff...")
+		} else {
+			log.Printf("Error opening HWiNFO registry key: %v", err)
+		}
+		return []Sensor{}
+	}
+	defer k.Close()
+
 	var sensors []Sensor
 	for i := 0; ; i++ {
-		s, _, err := vsb.GetStringValue(fmt.Sprintf("Sensor%d", i))
+		s, _, err := k.GetStringValue(fmt.Sprintf("Sensor%d", i))
 		if err != nil {
 			if errors.Is(err, registry.ErrNotExist) {
 				break
@@ -159,19 +177,19 @@ func readSensors() []Sensor {
 			continue
 		}
 
-		label, _, err := vsb.GetStringValue(fmt.Sprintf("Label%d", i))
+		label, _, err := k.GetStringValue(fmt.Sprintf("Label%d", i))
 		if err != nil {
 			log.Printf("Failed to read Label%d key: %v", i, err)
 			continue
 		}
 
-		value, _, err := vsb.GetStringValue(fmt.Sprintf("Value%d", i))
+		value, _, err := k.GetStringValue(fmt.Sprintf("Value%d", i))
 		if err != nil {
 			log.Printf("Failed to read Value%d key: %v", i, err)
 			continue
 		}
 
-		valueRawStr, _, err := vsb.GetStringValue(fmt.Sprintf("ValueRaw%d", i))
+		valueRawStr, _, err := k.GetStringValue(fmt.Sprintf("ValueRaw%d", i))
 		if err != nil {
 			log.Printf("Failed to read ValueRaw%d key: %v", i, err)
 			continue
