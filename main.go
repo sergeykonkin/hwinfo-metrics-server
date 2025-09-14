@@ -120,6 +120,13 @@ func updateSensorsLoop(ctx context.Context) {
 func startHTTPServer(cancel context.CancelFunc) {
 	http.HandleFunc("/sensors", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
 		cache.mu.RLock()
 		defer cache.mu.RUnlock()
 		if err := json.NewEncoder(w).Encode(cache.sensors); err != nil {
