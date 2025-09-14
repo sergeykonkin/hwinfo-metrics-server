@@ -1,5 +1,17 @@
-# Created by https://www.toptal.com/developers/gitignore/api/windows,linux,macos,visualstudiocode,goland+all
-# Edit at https://www.toptal.com/developers/gitignore?templates=windows,linux,macos,visualstudiocode,goland+all
+# Created by https://www.toptal.com/developers/gitignore/api/linux,macos,windows,goland+all,visualstudiocode,executable
+# Edit at https://www.toptal.com/developers/gitignore?templates=linux,macos,windows,goland+all,visualstudiocode,executable
+
+### Executable ###
+*.app
+*.bat
+*.cgi
+*.com
+*.exe
+*.gadget
+*.jar
+*.pif
+*.vb
+*.wsf
 
 ### GoLand+all ###
 # Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion, Android Studio, WebStorm and Rider
@@ -182,4 +194,4 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
-# End of https://www.toptal.com/developers/gitignore/api/windows,linux,macos,visualstudiocode,goland+all
+# End of https://www.toptal.com/developers/gitignore/api/linux,macos,windows,goland+all,visualstudiocode,executable
