@@ -1,0 +1,31 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+
+      - name: Build
+        run: |
+          set GOOS=windows
+          set GOARCH=amd64
+          go build -o hwinfo-metrics-server.exe main.go
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: hwinfo-metrics-server.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
